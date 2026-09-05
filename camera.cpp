@@ -1,8 +1,8 @@
-#include "camera.hpp"
-#include "scop.hpp"
+#include "includes/camera.hpp"
+#include "includes/scop.hpp"
 #include <cmath>
-Camera::Camera(Vec3 pos, Vec3 target, Vec3 worldUp, float fov, float aspect, float near, float far)
-    : pos(pos), fov(fov), aspect(aspect), near(near), far(far)
+Camera::Camera(Vec3 pos, Vec3 target, Vec3 Up, float fov, float aspect, float near, float far)
+    : pos(pos),up(Up), fov(fov), aspect(aspect), near(near), far(far)
 {
     Vec3 dir = (target-pos).normalize();
     pitch = asinf(dir.y);

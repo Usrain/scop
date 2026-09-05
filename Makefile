@@ -12,16 +12,19 @@
 
 C=c++
 CFLAGS = -Wall -Werror -Wextra -g
-NAME = btc
+NAME = scop
 SRCS = main.cpp \
-		parsing.cpp
+		parsing.cpp \
+		m4.cpp \
+		camera.cpp \
+		vulkan.cpp
 OBJ_DIR = .build/
 OBJS = $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(C) $(CFLAGS) $(OBJS) -o $(NAME)
+	$(C) $(CFLAGS) -lvulkan -lglfw $(OBJS) -o $(NAME)
 
 $(OBJ_DIR)%.o:%.cpp
 	@mkdir -p $(dir $@)

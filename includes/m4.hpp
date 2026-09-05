@@ -1,3 +1,5 @@
+#include "scop.hpp"
+struct Vec3;
 class m4
 {
     private :
@@ -15,4 +17,7 @@ class m4
         static m4 rotateZ(float rangle);
         static m4 translate(const Vec3& t);
         static m4 scale(const Vec3& s);
-}
+        static m4 zero();
+        static m4 lookAt(const Vec3& eye, const Vec3& center, const Vec3& up);
+        static m4 perspective(float fovyInRadians, float aspect, float zNear, float zFar);
+};

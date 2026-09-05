@@ -1,5 +1,4 @@
-#include "scop.hpp"
-#include "m4.hpp"
+#include "includes/scop.hpp"
 #include <cmath>
 
 m4::m4()
@@ -93,5 +92,45 @@ m4 m4::scale(const Vec3& s)
     result[0] = s.x;
     result[5] = s.y;
     result[10] = s.z;
+    return result;
+}
+m4 m4::lookAt(const Vec3& eye, const Vec3& center, const Vec3& up) 
+{
+    Vec3 f = (center - eye).normalize();
+    Vec3 r = f.cross(up).normalize();
+    Vec3 u = r.cross(f);
+
+    m4 result = m4::identity();
+
+    result[0] = r.x;  result[4] = r.y;  result[8]  = r.z;
+    
+    result[1] = -u.x; result[5] = -u.y; result[9]  = -u.z; 
+    
+    result[2] = -f.x; result[6] = -f.y; result[10] = -f.z;
+
+    result[12] = -r.dot(eye);
+    result[13] =  u.dot(eye);
+    result[14] =  f.dot(eye);
+    result[15] =  1.0f;
+
+    return result;
+}
+
+m4 m4::zero()
+{
+    return (m4 (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0));
+}
+
+m4 m4::perspective(float fovyInRadians, float aspect, float zNear, float zFar) 
+{
+    float tanHalfFovy = tanf(fovyInRadians / 2.0f);
+
+    m4 result = m4::zero();
+    result[0] = 1.0f / (aspect * tanHalfFovy);
+    result[5] = -1.0f / tanHalfFovy; 
+    result[10] = zFar / (zNear - zFar);
+    result[11] = -1.0f;
+    result[14] = -(zFar * zNear) / (zFar - zNear);
+
     return result;
 }
