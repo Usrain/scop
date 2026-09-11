@@ -11,13 +11,15 @@
 # **************************************************************************** #
 
 C=c++
-CFLAGS = -Wall -Werror -Wextra -g
+CFLAGS = -Wall -Werror -Wextra -std=c++17 -g
 NAME = scop
 SRCS = main.cpp \
 		parsing.cpp \
 		m4.cpp \
 		camera.cpp \
-		vulkan.cpp
+		vulkan.cpp \
+		swapchain.cpp \
+		VkRender.cpp
 OBJ_DIR = .build/
 OBJS = $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 
