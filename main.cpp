@@ -69,10 +69,25 @@ int main(int ac, char **av)
     m4 view = camera.getView();
     m4 proj = camera.getProjection();
     m4 mvp = proj * view * model;
-
+    mvp.identity(); // a suppr
+    float lastFrame = 0.0f;
+    glfwSetWindowUserPointer(window, &camera);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouseCallback);
     while (!glfwWindowShouldClose(window))
     {
+        float currentFrame = (float)glfwGetTime();
+        float deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         glfwPollEvents();
+        handleKeyboard(window, camera, deltaTime);
+
+        m4 model = m4::identity();
+        m4 view = camera.getView();
+        m4 proj = camera.getProjection();
+        m4 mvp = proj * view * model;
+
         drawFrame(device, swapchain, graphicsQueue, commandBuffer, renderPass,
                 framebuffers, swapchainExtent, graphicsPipeline, pipelineLayout,
                 vertexBuffer, indexBuffer, (uint32_t)finalIndices.size(),

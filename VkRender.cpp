@@ -516,7 +516,7 @@ void drawFrame(VkDevice device, VkSwapchainKHR swapchain, VkQueue graphicsQueue,
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-    VkClearValue clearColor = {{{0.05f, 0.05f, 0.1f, 1.0f}}};
+    VkClearValue clearColor = {{{1.0f, 1.0f, 1.0f, 1.0f}}};
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

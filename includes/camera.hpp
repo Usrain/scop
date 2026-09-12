@@ -1,5 +1,6 @@
 #ifndef CAMERA_HPP
 # define CAMERA_HPP
+# include "vector.hpp"
 # include "scop.hpp"
 class Camera {
     public:
@@ -10,6 +11,9 @@ class Camera {
         void rotate(float yaw, float pitch);
         void setAspect(float aspect);
         void updateVectors(void);
+        Vec3& getfront();
+        Vec3& getright();
+        Vec3& getup();
     private:
         Vec3 pos;
         Vec3 front, up, right;

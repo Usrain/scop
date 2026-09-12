@@ -19,7 +19,8 @@ SRCS = main.cpp \
 		camera.cpp \
 		vulkan.cpp \
 		swapchain.cpp \
-		VkRender.cpp
+		VkRender.cpp \
+		inputmanager.cpp
 OBJ_DIR = .build/
 OBJS = $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 

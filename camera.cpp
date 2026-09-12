@@ -1,6 +1,7 @@
 #include "includes/camera.hpp"
 #include "includes/scop.hpp"
 #include <cmath>
+#include "includes/scop.hpp"
 Camera::Camera(Vec3 pos, Vec3 target, Vec3 Up, float fov, float aspect, float near, float far)
     : pos(pos),up(Up), fov(fov), aspect(aspect), near(near), far(far)
 {
@@ -49,4 +50,16 @@ void Camera::updateVectors()
     front = newFront.normalize();
     right = front.cross(worldUp).normalize();
     up = right.cross(front);
+}
+Vec3 &Camera::getfront()
+{
+    return (this->front);
+}
+Vec3 &Camera::getright()
+{
+    return (this->right);
+}
+Vec3 &Camera::getup()
+{
+    return (this->up);
 }
