@@ -8,9 +8,9 @@ layout(binding = 0) uniform UBO {
     mat4 mvp;
 } ubo;
 
-layout(location = 0) out vec2 fragUV;
+layout(location = 0) out vec3 fragNormal;
 
 void main() {
     gl_Position = ubo.mvp * vec4(inPosition, 1.0);
-    fragUV = inUV;
+    fragNormal = inNormal;
 }

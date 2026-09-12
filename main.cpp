@@ -32,8 +32,14 @@ int main(int ac, char **av)
     VkExtent2D swapchainExtent;
     VkSwapchainKHR swapchain = createSwapchain(physicalDevice, device, surface, window, &swapchainFormat, &swapchainExtent);
     std::vector<VkImageView> imageViews = createImageViews(device, swapchain, swapchainFormat);
-    VkRenderPass renderPass = createRenderPass(device, swapchainFormat);
-    std::vector<VkFramebuffer> framebuffers = createFramebuffers(device, renderPass, imageViews, swapchainExtent);
+    VkFormat depthFormat = findDepthFormat(physicalDevice);
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;
+    createDepthResources(physicalDevice, device, swapchainExtent, depthFormat,
+                          &depthImage, &depthImageMemory, &depthImageView);
+    VkRenderPass renderPass = createRenderPass(device, swapchainFormat, depthFormat);
+    std::vector<VkFramebuffer> framebuffers = createFramebuffers(device, renderPass, imageViews, depthImageView, swapchainExtent);
     VkDescriptorSetLayout descriptorSetLayout = createDescriptorSetLayout(device);
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
@@ -94,6 +100,10 @@ int main(int ac, char **av)
                 descriptorSet, uniformBufferMapped, mvp, sync);
     }
     vkDeviceWaitIdle(device);
+
+    vkDestroyImageView(device, depthImageView, nullptr);
+    vkDestroyImage(device, depthImage, nullptr);
+    vkFreeMemory(device, depthImageMemory, nullptr);
 
     return 0;
 }

@@ -127,7 +127,7 @@ m4 m4::perspective(float fovyInRadians, float aspect, float zNear, float zFar)
 
     m4 result = m4::zero();
     result[0] = 1.0f / (aspect * tanHalfFovy);
-    result[5] = -1.0f / tanHalfFovy; 
+    result[5] = 1.0f / tanHalfFovy; 
     result[10] = zFar / (zNear - zFar);
     result[11] = -1.0f;
     result[14] = -(zFar * zNear) / (zFar - zNear);

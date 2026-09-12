@@ -1,8 +1,10 @@
 #version 450
 
-layout(location = 0) in vec2 fragUV;
+layout(location = 0) in vec3 fragNormal;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = vec4(fragUV, 0.0, 1.0); // placeholder pour tester
+    vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3));
+    float diffuse = max(dot(normalize(fragNormal), lightDir), 0.2);
+    outColor = vec4(vec3(diffuse), 1.0);
 }

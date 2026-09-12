@@ -90,4 +90,16 @@ VkDescriptorSet createDescriptorSet(VkDevice device, VkDescriptorPool descriptor
 //handle mouvement
 void handleKeyboard(GLFWwindow *window, Camera& camera, float deltatime);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+VkFormat findDepthFormat(VkPhysicalDevice physicalDevice);
+
+void createDepthResources(VkPhysicalDevice physicalDevice, VkDevice device,
+                           VkExtent2D swapchainExtent, VkFormat depthFormat,
+                           VkImage* outImage, VkDeviceMemory* outMemory, VkImageView* outView);
+
+VkRenderPass createRenderPass(VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat);
+
+std::vector<VkFramebuffer> createFramebuffers(VkDevice device, VkRenderPass renderPass,
+                                               const std::vector<VkImageView>& imageViews,
+                                               VkImageView depthImageView,
+                                               VkExtent2D swapchainExtent);
 #endif

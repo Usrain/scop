@@ -35,5 +35,5 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
     lastY = (float)ypos;
 
     float sensitivity = 0.002f;
-    camera->rotate(xoffset * sensitivity, -(yoffset * sensitivity));
+    camera->rotate(xoffset * sensitivity, (yoffset * sensitivity));
 }
