@@ -3,7 +3,7 @@
 
 void handleKeyboard(GLFWwindow *window, Camera& camera, float deltatime)
 {
-    float speed = 2.5f * deltatime;
+    float speed = 50.0f * deltatime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.move(camera.getfront() * speed);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)

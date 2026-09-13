@@ -1,10 +1,12 @@
 #version 450
 
-layout(location = 0) in vec3 fragNormal;
+layout(location = 0) in vec2 fragUV;
 layout(location = 0) out vec4 outColor;
 
+layout(push_constant) uniform PushConstants {
+    vec3 materialColor;
+} pc;
+
 void main() {
-    vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3));
-    float diffuse = max(dot(normalize(fragNormal), lightDir), 0.2);
-    outColor = vec4(vec3(diffuse), 1.0);
+    outColor = vec4(pc.materialColor, 1.0);
 }

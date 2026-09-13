@@ -162,3 +162,88 @@ VkDevice createLogicalDevice(VkPhysicalDevice physicalDevice, uint32_t queueFami
     vkGetDeviceQueue(device, queueFamilyIndex, 0, graphicsQueue);
     return device;
 }
+#include "includes/scop.hpp"
+#include <stdexcept>
+
+
+
+// Crée un VkBuffer et lui alloue la mémoire GPU correspondante
+void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize size, 
+                  VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
+                  VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+    // 1. Création du handle de Buffer
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Utilisé par une seule queue family
+
+    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("Échec de la création du buffer !");
+    }
+
+    // 2. Récupération des contraintes mémoire requises par le buffer
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+
+    // 3. Configuration de l'allocation mémoire
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+
+    // 4. Allocation de la mémoire sur la carte graphique
+    if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Échec de l'allocation de la mémoire du buffer !");
+    }
+
+    // 5. Liaison (bind) entre le buffer et la mémoire allouée
+    vkBindBufferMemory(device, buffer, bufferMemory, 0);
+}
+
+ImageData parseBMP(const std::string& filename) {
+    std::ifstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        throw std::runtime_error("Impossible d'ouvrir le fichier BMP : " + filename);
+    }
+
+    unsigned char header[54];
+    file.read(reinterpret_cast<char*>(header), 54);
+    if (file.gcount() < 54 || header[0] != 'B' || header[1] != 'M') {
+        throw std::runtime_error("Fichier BMP invalide ou corrompu : " + filename);
+    }
+
+    uint32_t dataOffset = *reinterpret_cast<uint32_t*>(&header[10]);
+    int width           = *reinterpret_cast<int*>(&header[18]);
+    int height          = *reinterpret_cast<int*>(&header[22]);
+    uint16_t bpp        = *reinterpret_cast<uint16_t*>(&header[28]);
+
+    if (bpp != 24 && bpp != 32) {
+        throw std::runtime_error("Seuls les formats BMP 24-bit et 32-bit sont supportés.");
+    }
+
+    int channels = bpp / 8;
+    uint32_t imageSize = width * height * 4; // Format RGBA forcé pour Vulkan
+
+    file.seekg(dataOffset, std::ios::beg);
+    std::vector<unsigned char> rawData(width * height * channels);
+    file.read(reinterpret_cast<char*>(rawData.data()), rawData.size());
+
+    std::vector<unsigned char> pixels(imageSize);
+
+    // Convertit BGR(A) vers RGBA et inverse les lignes (BMP stocke de bas en haut)
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            int srcIndex = ((height - 1 - y) * width + x) * channels;
+            int dstIndex = (y * width + x) * 4;
+
+            pixels[dstIndex + 0] = rawData[srcIndex + 2]; // Red
+            pixels[dstIndex + 1] = rawData[srcIndex + 1]; // Green
+            pixels[dstIndex + 2] = rawData[srcIndex + 0]; // Blue
+            pixels[dstIndex + 3] = (channels == 4) ? rawData[srcIndex + 3] : 255; // Alpha
+        }
+    }
+
+    return ImageData{width, height, 4, pixels};
+}

@@ -314,10 +314,17 @@ void createGraphicsPipeline(VkDevice device, VkExtent2D swapchainExtent,
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
 
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(float) * 3;
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     VkPipelineLayout pipelineLayout;
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
@@ -570,9 +577,12 @@ VkDescriptorPool createDescriptorPool(VkDevice device)
     return descriptorPool;
 }
 
-VkDescriptorSet createDescriptorSet(VkDevice device, VkDescriptorPool descriptorPool,
-                                     VkDescriptorSetLayout descriptorSetLayout,
-                                     VkBuffer uniformBuffer)
+VkDescriptorSet createDescriptorSet(VkDevice device, 
+                                    VkDescriptorPool descriptorPool, 
+                                    VkDescriptorSetLayout descriptorSetLayout, 
+                                    VkBuffer uniformBuffer,
+                                    VkImageView textureImageView,
+                                    VkSampler textureSampler)
 {
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -581,24 +591,39 @@ VkDescriptorSet createDescriptorSet(VkDevice device, VkDescriptorPool descriptor
     allocInfo.pSetLayouts = &descriptorSetLayout;
 
     VkDescriptorSet descriptorSet;
-    if (vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet) != VK_SUCCESS)
-        throw std::runtime_error("failed to allocate descriptor set");
+    if (vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+        throw std::runtime_error("Erreur lors de l'allocation du descriptor set!");
+    }
 
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = uniformBuffer;
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(m4);
 
-    VkWriteDescriptorSet descriptorWrite{};
-    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = descriptorSet;
-    descriptorWrite.dstBinding = 0;
-    descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorWrite.descriptorCount = 1;
-    descriptorWrite.pBufferInfo = &bufferInfo;
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = textureImageView;
+    imageInfo.sampler = textureSampler;
 
-    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+    std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].dstSet = descriptorSet;
+    descriptorWrites[0].dstBinding = 0;
+    descriptorWrites[0].dstArrayElement = 0;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrites[0].descriptorCount = 1;
+    descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[1].dstSet = descriptorSet;
+    descriptorWrites[1].dstBinding = 1;
+    descriptorWrites[1].dstArrayElement = 0;
+    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[1].descriptorCount = 1;
+    descriptorWrites[1].pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
     return descriptorSet;
 }
@@ -607,7 +632,8 @@ void drawFrame(VkDevice device, VkSwapchainKHR swapchain, VkQueue graphicsQueue,
                VkCommandBuffer commandBuffer, VkRenderPass renderPass,
                const std::vector<VkFramebuffer>& framebuffers, VkExtent2D swapchainExtent,
                VkPipeline graphicsPipeline, VkPipelineLayout pipelineLayout,
-               VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount,
+               VkBuffer vertexBuffer, VkBuffer indexBuffer,
+               const std::vector<SubMesh>& subMeshes, const std::vector<material>& materials,
                VkDescriptorSet descriptorSet,
                void* uniformBufferMapped, const m4& mvp,
                SyncObjects& sync)
@@ -653,7 +679,19 @@ void drawFrame(VkDevice device, VkSwapchainKHR swapchain, VkQueue graphicsQueue,
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                              pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
-    vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+    for (const auto& sub : subMeshes)
+    {
+        Vec3 color = (sub.materialIndex >= 0 && (size_t)sub.materialIndex < materials.size())
+                    ? materials[sub.materialIndex].Kd
+                    : Vec3{0.8f, 0.8f, 0.8f}; // gris par défaut si pas de matériau
+
+        float pushData[3] = { color.x, color.y, color.z };
+
+        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT,
+                            0, sizeof(pushData), pushData);
+
+        vkCmdDrawIndexed(commandBuffer, sub.indexCount, 1, sub.indexOffset, 0, 0);
+    }
 
     vkCmdEndRenderPass(commandBuffer);
 

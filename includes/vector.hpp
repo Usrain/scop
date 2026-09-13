@@ -1,6 +1,7 @@
 #ifndef VECTOR_HPP
 # define VECTOR_HPP
-# include "scop.hpp"
+# include <cmath>
+# include <tuple>
 
 struct Vec3 {
     float x, y, z;

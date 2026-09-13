@@ -20,7 +20,9 @@ SRCS = main.cpp \
 		vulkan.cpp \
 		swapchain.cpp \
 		VkRender.cpp \
-		inputmanager.cpp
+		inputmanager.cpp \
+		material.cpp \
+		textures.cpp
 OBJ_DIR = .build/
 OBJS = $(SRCS:%.cpp=$(OBJ_DIR)%.o)
 

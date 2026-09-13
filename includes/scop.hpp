@@ -17,6 +17,8 @@
 # include <GLFW/glfw3.h>
 #include "camera.hpp"
 #include "vector.hpp"
+#include "material.hpp"
+class material;
 class Camera;
 struct Vec3;
 struct Vec2;
@@ -25,7 +27,14 @@ struct Mesh {
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 };
-void parse(std::string filename, std::vector<Vertex>& out_vertices, std::vector<uint32_t>& out_indices);
+struct SubMesh {
+    uint32_t indexOffset;
+    uint32_t indexCount;
+    int materialIndex;
+};
+void parse(std::string filename, std::vector<Vertex>& out_vertices, std::vector<uint32_t>& out_indices,
+           std::vector<material>& vecmat, std::vector<SubMesh>& out_subMeshes);
+           void parsemat(std::string filename, std::vector<material>& vecmat);
 VkInstance createVulkanInstance();
 GLFWwindow* initWindow();
 VkSurfaceKHR createSurface(VkInstance instance, GLFWwindow *window);
@@ -64,7 +73,8 @@ void drawFrame(VkDevice device, VkSwapchainKHR swapchain, VkQueue graphicsQueue,
                VkCommandBuffer commandBuffer, VkRenderPass renderPass,
                const std::vector<VkFramebuffer>& framebuffers, VkExtent2D swapchainExtent,
                VkPipeline graphicsPipeline, VkPipelineLayout pipelineLayout,
-               VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount,
+               VkBuffer vertexBuffer, VkBuffer indexBuffer,
+               const std::vector<SubMesh>& subMeshes, const std::vector<material>& materials,
                VkDescriptorSet descriptorSet,
                void* uniformBufferMapped, const m4& mvp,
                SyncObjects& sync);
@@ -84,9 +94,12 @@ void createUniformBuffer(VkPhysicalDevice physicalDevice, VkDevice device,
                           VkBuffer* outBuffer, VkDeviceMemory* outMemory, void** outMapped);
 void updateUniformBuffer(void* mapped, const m4& mvp);
 VkDescriptorPool createDescriptorPool(VkDevice device);
-VkDescriptorSet createDescriptorSet(VkDevice device, VkDescriptorPool descriptorPool,
-                                     VkDescriptorSetLayout descriptorSetLayout,
-                                     VkBuffer uniformBuffer);
+VkDescriptorSet createDescriptorSet(VkDevice device, 
+                                    VkDescriptorPool descriptorPool, 
+                                    VkDescriptorSetLayout descriptorSetLayout, 
+                                    VkBuffer uniformBuffer,
+                                    VkImageView textureImageView,
+                                    VkSampler textureSampler);
 //handle mouvement
 void handleKeyboard(GLFWwindow *window, Camera& camera, float deltatime);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
@@ -102,4 +115,29 @@ std::vector<VkFramebuffer> createFramebuffers(VkDevice device, VkRenderPass rend
                                                const std::vector<VkImageView>& imageViews,
                                                VkImageView depthImageView,
                                                VkExtent2D swapchainExtent);
+void createTextureImage(VkPhysicalDevice physicalDevice, VkDevice device,
+                         VkCommandPool commandPool, VkQueue graphicsQueue,
+                         const std::string& bmpPath,
+                         VkImage* outImage, VkDeviceMemory* outMemory);
+void transitionImageLayout(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue,
+                            VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+void copyBufferToImage(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue,
+                        VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+VkImageView createTextureImageView(VkDevice device, VkImage textureImage);
+VkSampler createTextureSampler(VkDevice device);
+struct ImageData {
+    int width;
+    int height;
+    int channels;
+    std::vector<unsigned char> pixels;
+};
+
+ImageData parseBMP(const std::string& path);
+
+void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize size, 
+                  VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
+                  VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+
+uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, 
+                        VkMemoryPropertyFlags properties);
 #endif
